@@ -12,6 +12,7 @@ from tests.factories import AccountFactory
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
 from service.routes import app
+from unittest.mock import patch
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
@@ -183,9 +184,37 @@ class TestAccountService(TestCase):
         resp = self.client.delete(f"{BASE_URL}/0")
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
+    def test_delete_account_success(self):
+        """It should Delete an Account that exists"""
+        account = self._create_accounts(1)[0]
+        # Delete it
+        resp = self.client.delete(f"{BASE_URL}/{account.id}")
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        # Confirm it's gone
+        resp = self.client.get(f"{BASE_URL}/{account.id}")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
     # ERROR HANDLERS
     def test_method_not_allowed(self):
         """It should not allow Method Not Allowed"""
         # Call a route with a method it doesn't support (e.g., DELETE on the collection)
         resp = self.client.delete(BASE_URL)
         self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_internal_server_error(self):
+        """It should handle 500 Global Errors"""
+        with patch('service.routes.Account.find') as mock_find:
+            mock_find.side_effect = Exception('Data corruption')
+            # Use the app imported at the top of the file
+            # We also use a context manager to temporarily disable testing mode
+            from service.routes import app
+            app.testing = False
+            resp = self.client.get(f"{BASE_URL}/1")
+            app.testing = True
+            self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # OTHER SECTIONS
+    def test_repr(self):
+        """It should represent an account as a string"""
+        account = Account(name="Test User")
+        self.assertEqual(str(account), "<Account Test User id=[None]>")
