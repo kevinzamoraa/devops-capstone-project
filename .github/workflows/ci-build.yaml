@@ -9,6 +9,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # Aquí definimos la base de datos PostgreSQL
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        # Esperamos a que la base de datos esté lista antes de seguir
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v3
 
@@ -23,6 +41,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Tests with Nose
+        env:
+          # Le decimos a la app cómo conectarse a la DB de arriba
+          DATABASE_URI: postgresql://postgres:postgres@localhost:5432/postgres
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           nosetests --with-spec --spec-color --with-coverage --cover-package=service || true
