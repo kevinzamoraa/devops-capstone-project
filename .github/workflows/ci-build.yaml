@@ -29,6 +29,11 @@ jobs:
           --health-retries 5
 
     steps:
+      # NUEVO PASO: Instalar herramientas necesarias en la imagen 'slim'
+      - name: Install system dependencies
+        run: |
+          apt-get update && apt-get install -y git gcc libpq-dev
+          
       - name: Checkout code
         uses: actions/checkout@v3
 
