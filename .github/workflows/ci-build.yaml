@@ -10,7 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # Aquí definimos la base de datos PostgreSQL
+    container:
+      image: python:3.9-slim
+
     services:
       postgres:
         image: postgres:14
@@ -20,7 +22,6 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
-        # Esperamos a que la base de datos esté lista antes de seguir
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -30,11 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-
+      # Ya no necesitamos 'setup-python' porque el contenedor ya es Python,
+      # lo ideal es instalar dependencias directo:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -42,8 +40,9 @@ jobs:
 
       - name: Run Tests with Nose
         env:
-          # Le decimos a la app cómo conectarse a la DB de arriba
-          DATABASE_URI: postgresql://postgres:postgres@localhost:5432/postgres
+          # Nota: Al estar dentro de un contenedor, usamos 'postgres' como host
+          # en lugar de 'localhost' para conectar con el servicio.
+          DATABASE_URI: postgresql://postgres:postgres@postgres:5432/postgres
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           nosetests --with-spec --spec-color --with-coverage --cover-package=service || true
