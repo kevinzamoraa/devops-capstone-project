@@ -1,0 +1,43 @@
+# 1. Crear el espacio de trabajo (Workspace)
+oc create -f tekton/pvc.yaml
+
+# 2. Cargar las tareas personalizadas (lint, tests, build, etc.)
+oc apply -f tekton/tasks.yaml
+
+# 3. Cargar la estructura del pipeline inicial
+oc apply -f tekton/pipeline.yaml
+
+
+# Instalar la pieza faltante: Git-Clone
+# Tu pipeline sabe que tiene que clonar el código, pero no sabe "cómo" 
+# hacerlo hasta que le instalamos la herramienta desde el Tekton 
+# Catalog (una biblioteca pública de tareas reutilizables):
+
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.9/git-clone.yaml
+
+
+# 4. La prueba de fuego: Iniciar el Pipeline
+# Ahora vamos a ejecutar el pipeline manualmente. Este comando es 
+# largo porque le estamos pasando la URL de tu repositorio y el 
+# nombre del volumen que creamos en el paso 2:
+
+Bash
+
+tkn pipeline start cd-pipeline \
+    -p repo-url="https://github.com/kevinzamoraa/devops-capstone-project.git" \
+    -p branch="main" \
+    -w name=pipeline-workspace,claimName=pipelinerun-pvc \
+    -s pipeline \
+    --showlog
+
+# 5. Verificación de resultados
+# Una vez que el log termine de correr, debemos confirmar que el 
+# estado es Succeeded (Exitoso).
+
+# Ejecuta:
+
+Bash
+
+tkn pipelinerun ls
+
+
