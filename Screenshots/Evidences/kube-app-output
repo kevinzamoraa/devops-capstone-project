@@ -1,0 +1,15 @@
+{"name":"Account REST API Service","version":"1.0"}
+
+theia@theiaopenshift-kevinzamoraa:/home/project/devops-capstone-project$ docker tag accounts us.icr.io/$SN_ICR_NAMESPACE/accounts:1
+docker push us.icr.io/$SN_ICR_NAMESPACE/accounts:1
+The push refers to repository [us.icr.io/sn-labs-kevinzamoraa/accounts]
+6ed5a554a705: Pushed 
+1581e8d724ea: Pushed 
+d38cc776f540: Pushed 
+f4e10a37056c: Pushed 
+068c22347721: Pushed 
+9e599118e168: Pushed 
+e228adf1886f: Pushed 
+fb5ccd0db472: Pushed 
+8d853c8add5d: Pushed 
+1: digest: sha256:a680de683ed59db8f00d734a64c2bb85af802a05b6c72ebf4e80623bb69c765c size: 2202

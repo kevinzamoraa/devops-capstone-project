@@ -1,2 +1,6 @@
 git commit -am "nose's arguments added"
 git push --set-upstream origin dev-setup
+
+
+git config --global user.email "kevin.zamora.amela@gmail.com"
+git config --global user.name "Kevin Zamora"

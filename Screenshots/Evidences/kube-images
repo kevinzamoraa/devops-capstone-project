@@ -1,0 +1,5 @@
+(venv) theia@theiaopenshift-kevinzamoraa:/home/project/devops-capstone-project$ docker image ls
+REPOSITORY                                TAG       IMAGE ID       CREATED          SIZE
+accounts                                  latest    982b969094af   37 minutes ago   204MB
+us.icr.io/sn-labs-kevinzamoraa/accounts   1         982b969094af   37 minutes ago   204MB
+postgres                                  alpine    bb46dc8bfad7   17 months ago    248MB
