@@ -1,0 +1,62 @@
+El Linting es fundamental en DevOps porque detecta errores de sintaxis y problemas de estilo antes de que el código llegue siquiera a ejecutarse. Usaremos flake8, que es el estándar de oro para Python.
+
+Paso 1: Instalar la tarea Flake8 desde el Catálogo
+Al igual que hicimos con git-clone, necesitamos descargar la definición de la tarea para que Tekton sepa cómo ejecutar flake8:
+
+Bash
+
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/flake8/0.1/flake8.yaml
+Paso 2: Editar pipeline.yaml
+Abre el archivo tekton/pipeline.yaml. Debes añadir la tarea lint justo después de la tarea clone.
+
+Asegúrate de que la indentación sea exacta (debe estar al mismo nivel que el - name: clone anterior):
+
+YAML
+
+    - name: lint
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: flake8
+      params:
+      - name: image
+        value: "python:3.9-slim"
+      - name: args
+        value: ["--count","--max-complexity=10","--max-line-length=127","--statistics"]
+      runAfter:
+        - clone
+¿Por qué configuramos esto así?
+
+workspaces / name: source: Flake8 necesita acceder al código clonado, por eso lo conectamos al pipeline-workspace.
+
+runAfter: clone: Esto crea la dependencia. No podemos analizar el código si aún no lo hemos descargado.
+
+args: Estamos configurando reglas estrictas: longitud de línea de 127 caracteres y una complejidad ciclomática de 10 (para evitar funciones demasiado complicadas).
+
+Paso 3: Aplicar y Ejecutar
+Cada vez que editas el archivo YAML, debes "notificar" a OpenShift/Tekton de los cambios antes de iniciar el pipeline:
+
+Bash
+
+# 1. Actualizar la definición del pipeline
+oc apply -f tekton/pipeline.yaml
+
+# 2. Iniciar el pipeline
+tkn pipeline start cd-pipeline \
+    -p repo-url="https://github.com/kevinzamoraa/devops-capstone-project.git" \
+    -p branch="main" \
+    -w name=pipeline-workspace,claimName=pipelinerun-pvc \
+    -s pipeline \
+    --showlog
+Paso 4: Asegurar tu trabajo (Git)
+Como bien dice el ejercicio, el entorno del IDE es efímero. No queremos que un tiempo de espera borre tu progreso:
+
+Bash
+
+git commit -am 'added lint task'
+git push --set-upstream origin cd-pipeline
+Verificación de Salud
+Si el pipeline falla en la tarea de lint, es probable que tu código tenga algún error de estilo (como espacios de más o líneas demasiado largas). Tekton detendrá el pipeline ahí mismo, evitando que código "sucio" llegue a producción.
+
+¿El comando tkn pipelinerun ls te muestra que la última ejecución fue "Succeeded"? Si es así, ¡estás listo para añadir la tarea de Tests y completar el ciclo de CI!

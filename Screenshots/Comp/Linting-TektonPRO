@@ -1,0 +1,71 @@
+# Como nosetests no existe en el catálogo oficial, vamos a definir cómo queremos que se ejecute. Aquí tienes 
+# los pasos detallados para editar tu archivo tekton/tasks.yaml.
+
+# Paso 1: Editar tekton/tasks.yaml
+# Abre el archivo y desplázate hasta el final. Asegúrate de añadir las tres líneas de guiones (---) para  
+# separar la nueva tarea de las anteriores.
+
+# Copia y pega este bloque, que sigue exactamente las especificaciones que necesitas:
+
+YAML
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: nose
+spec:
+  description: This task will run nosetests on the provided input.
+  workspaces:
+    - name: source
+  params:
+    - name: args
+      description: Arguments to pass to nose
+      type: string
+      default: "-v"
+    - name: database_uri
+      description: Database connection string
+      type: string
+      default: "sqlite:///test.db"
+  steps:
+    - name: nosetests
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: DATABASE_URI
+          value: $(params.database_uri)
+      script: |
+        #!/bin/bash
+        set -e
+
+        echo "***** Installing dependencies *****"
+        python -m pip install --upgrade pip wheel
+        pip install -qr requirements.txt
+
+        echo "***** Running nosetests with: $(params.args) *****"
+        nosetests $(params.args)
+
+# ¿Qué acabamos de construir?
+# workingDir: Le decimos a Tekton que ejecute todo dentro de la carpeta donde clonamos el código (source).
+
+# env: Pasamos la URL de la base de datos como una variable de entorno, para que Flask sepa dónde conectarse.
+
+# script: Este es el "corazón". Instalamos las dependencias en cada ejecución (aislamiento total) y corremos 
+# los tests. El set -e es vital: si un solo test falla, la tarea se detiene y marca el pipeline como Failed.
+
+# Paso 2: Aplicar los cambios al clúster
+# Para que Tekton se entere de que ahora tiene una nueva herramienta llamada nose, debemos aplicar el archivo:
+
+Bash
+
+oc apply -f tekton/tasks.yaml
+
+# Deberías ver el mensaje: task.tekton.dev/nose configured.
+
+# Paso 3: Asegurar tu código en Git
+# No queremos perder esta definición personalizada si el IDE se reinicia:
+
+Bash
+
+git commit -am 'added nose task'
+git push
