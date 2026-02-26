@@ -59,11 +59,10 @@ def create_accounts():
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
 
+
 ######################################################################
 # LIST ALL ACCOUNTS
 ######################################################################
-
-
 @app.route("/accounts", methods=["GET"])
 def list_accounts():
     """It should List all Accounts"""
@@ -95,6 +94,9 @@ def get_accounts(account_id):
     return account.serialize(), status.HTTP_200_OK
 
 
+######################################################################
+# UPDATE AN EXISTING ACCOUNT
+######################################################################
 @app.route("/accounts/<int:account_id>", methods=["PUT"])
 def update_accounts(account_id):
     """It should Update an Account"""
@@ -106,13 +108,11 @@ def update_accounts(account_id):
     account.deserialize(request.get_json())
     account.update()
     return account.serialize(), status.HTTP_200_OK
+
+
 ######################################################################
-# UPDATE AN EXISTING ACCOUNT
+# DELETE AN ACCOUNT
 ######################################################################
-
-# ... place you code here to UPDATE an account ...
-
-
 @app.route("/accounts/<int:account_id>", methods=["DELETE"])
 def delete_accounts(account_id):
     """It should Delete an Account"""
@@ -124,17 +124,8 @@ def delete_accounts(account_id):
 
 
 ######################################################################
-# DELETE AN ACCOUNT
-######################################################################
-
-# ... place you code here to DELETE an account ...
-
-
-######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
-
-
 def check_content_type(media_type):
     """Checks that the media type is correct"""
     content_type = request.headers.get("Content-Type")
