@@ -2,6 +2,8 @@
 # This pipeline needs the following tasks from Tekton Catalog
 #   - git-clone
 #   - flake8
+#   - buildah
+#   - openshift-client (ClusterTask)
 #
 ---
 apiVersion: tekton.dev/v1beta1
@@ -13,9 +15,13 @@ spec:
     - name: pipeline-workspace
   params:
     - name: repo-url
+      type: string
     - name: branch
+      type: string
       default: main
     - name: build-image
+      type: string
+      description: The name of the image to build and deploy
   tasks:
     - name: init
       workspaces:
@@ -47,8 +53,6 @@ spec:
       params:
       - name: image
         value: "python:3.9-slim"
-      - name: args
-        value: ["--count","--max-complexity=10","--max-line-length=127","--statistics"]
       runAfter:
         - clone
 
@@ -58,13 +62,8 @@ spec:
           workspace: pipeline-workspace
       taskRef:
         name: nose
-      params:
-      - name: database_uri
-        value: "sqlite:///test.db"
-      - name: args
-        value: "-v --with-spec --spec-color"
       runAfter:
-        - clone
+        - lint
 
     - name: build
       workspaces:
@@ -75,7 +74,25 @@ spec:
         kind: ClusterTask
       params:
       - name: IMAGE
-        value: "$(params.build-image)"
+        value: $(params.build-image)
       runAfter:
         - tests
-        - lint
+
+    - name: deploy
+      workspaces:
+        - name: manifest-dir
+          workspace: pipeline-workspace
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
+      params:
+      - name: SCRIPT
+        value: |
+          echo "Updating manifest..."
+          sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
+          cat deploy/deployment.yaml
+          echo "Deploying to OpenShift..."
+          oc apply -f deploy/
+          oc get pods -l app=accounts
+      runAfter:
+        - build
